@@ -32,3 +32,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Playwright MCP output
+.playwright-mcp
+
+# Vite PWA dev output
+dev-dist

@@ -1,15 +1,45 @@
 {
   "name": "theory-examer",
-  "module": "index.ts",
-  "type": "module",
   "private": true,
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "typecheck": "bun check"
+    "dev": "bunx --bun vite",
+    "build": "vue-tsc -b && bunx --bun vite build",
+    "preview": "bunx --bun vite preview",
+    "typecheck": "vue-tsc -b",
+    "test": "bun test",
+    "data": "bun scripts/fetch-data.ts",
+    "icons": "pwa-assets-generator"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@lucide/vue": "^1.61.0",
+    "@vueuse/core": "^15.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "idb-keyval": "^6.3.0",
+    "pinia": "^4.1.0",
+    "reka-ui": "^2.11.0",
+    "tailwind-merge": "^3.3.1",
+    "ts-fsrs": "^5.4.2",
+    "vue": "^3.5.44",
+    "vue-router": "^5.4.0",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^7"
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/bun": "latest",
+    "@vite-pwa/assets-generator": "^2.0.0",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/tsconfig": "^0.8.1",
+    "tailwindcss": "^4.3.3",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "vue-tsc": "^3.3.13",
+    "workbox-window": "^7.4.1"
   }
 }

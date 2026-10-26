@@ -34,3 +34,14 @@ export const router = createRouter({
 router.afterEach((to) => {
   document.title = to.meta.title ? `${to.meta.title} · Theory Examer` : "Theory Examer";
 });
+
+// After a new deploy the old route chunks are gone: reload once to get the new version.
+router.onError((err, to) => {
+  const stale = /dynamically imported module|Importing a module script failed|error loading dynamically/i;
+  if (!stale.test(String(err?.message ?? err))) return;
+  const key = "reloaded-for-chunk";
+  if (sessionStorage.getItem(key) === to.fullPath) return;
+  sessionStorage.setItem(key, to.fullPath);
+  location.hash = to.fullPath;
+  location.reload();
+});

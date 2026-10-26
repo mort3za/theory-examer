@@ -15,13 +15,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { isAnswered } from "@/lib/answer";
 import { formatClock } from "@/lib/date";
 import { buildExam, EXAM_RULES } from "@/lib/exam";
 import { newestFirst, timeLeft } from "@/lib/examRun";
+import { useCatalog } from "@/stores/catalog";
 import { useProgress } from "@/stores/progress";
 import { useSettings } from "@/stores/settings";
 
 const progress = useProgress();
+const catalog = useCatalog();
 const settings = useSettings();
 const router = useRouter();
 
@@ -33,7 +36,12 @@ onBeforeUnmount(() => clearInterval(timer));
 const left = computed(() => (current.value ? timeLeft(current.value, now.value) : 0));
 const answered = computed(() => {
   const c = current.value;
-  return c ? c.questions.filter((id) => (c.answers[id]?.length ?? 0) > 0).length : 0;
+  return c
+    ? c.questions.filter((id) => {
+        const q = catalog.get(id);
+        return !!q && isAnswered(q, c.answers[id] ?? []);
+      }).length
+    : 0;
 });
 
 const rules = computed(() => [

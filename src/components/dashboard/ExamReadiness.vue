@@ -13,10 +13,10 @@ export interface RecentExam {
   at: number;
 }
 
-const props = defineProps<{ errorPoints: number; coverage: number; exams: RecentExam[] }>();
+const props = defineProps<{ errorPoints: number | null; coverage: number; exams: RecentExam[] }>();
 
 const SCALE = 30;
-const label = computed(() => readinessLabel(props.errorPoints));
+const label = computed(() => (props.errorPoints === null ? null : readinessLabel(props.errorPoints)));
 const tone = computed(() =>
   label.value === "Ready" ? "text-success" : label.value === "Almost" ? "text-warning" : "text-destructive",
 );
@@ -29,7 +29,11 @@ const date = (t: number) => new Date(t).toLocaleDateString(undefined, { day: "nu
 
 <template>
   <div class="space-y-5 rounded-lg border p-4">
-    <div class="space-y-3">
+    <p v-if="errorPoints === null" class="text-sm text-muted-foreground">
+      Not enough questions are turned on to build an exam. Turn on more chapters in
+      <RouterLink to="/settings" class="underline underline-offset-4">Settings</RouterLink>.
+    </p>
+    <div v-else class="space-y-3">
       <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p class="tabular-nums">
           <span class="text-2xl font-semibold tracking-tight">≈ {{ errorPoints.toFixed(1) }}</span>

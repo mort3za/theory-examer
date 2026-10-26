@@ -142,7 +142,13 @@ function startTopics() {
       </div>
 
       <div class="divide-y rounded-lg border">
-        <Collapsible v-for="t in themes" :key="t.id" v-slot="{ open }">
+        <Collapsible v-for="(t, i) in themes" :key="t.id" v-slot="{ open }">
+          <p
+            v-if="i === 0 || themes[i - 1]!.id[0] !== t.id[0]"
+            class="bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground"
+          >
+            {{ t.id.startsWith("1.") ? "Basic material · all classes" : "Class material" }}
+          </p>
           <div class="flex items-center gap-3 px-4 py-3">
             <Checkbox
               :model-value="themeState(t)"

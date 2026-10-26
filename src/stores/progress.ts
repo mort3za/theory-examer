@@ -1,6 +1,7 @@
 import { watchDebounced } from "@vueuse/core";
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { defineStore } from "pinia";
+import { toast } from "vue-sonner";
 import { computed, ref, toRaw } from "vue";
 import { isAnswered } from "@/lib/answer";
 import { dayKey } from "@/lib/date";
@@ -102,8 +103,22 @@ export const useProgress = defineStore("progress", () => {
     navigator.storage?.persist?.().catch(() => {});
   }
 
-  function save() {
-    if (loaded.value) return idbSet(KEY, clone(data.value));
+  let warned = false;
+  async function save() {
+    if (!loaded.value) return;
+    const snapshot = clone(data.value);
+    try {
+      await idbSet(KEY, snapshot);
+    } catch {
+      // Storage full: cached question images share the quota. Drop them and try once more.
+      try {
+        await globalThis.caches?.delete("question-images");
+        await idbSet(KEY, snapshot);
+      } catch {
+        if (!warned) toast.error("Could not save your progress. Export a backup in Settings → Data.");
+        warned = true;
+      }
+    }
   }
 
   watchDebounced(data, save, { deep: true, debounce: 400, maxWait: 3000 });
@@ -234,6 +249,12 @@ export const useProgress = defineStore("progress", () => {
     return exam.id;
   }
 
+  /** Score a running exam whose time ran out while the app was closed. Needs the catalogue. */
+  function finishExpiredExam(now = Date.now()) {
+    const exam = data.value.currentExam;
+    if (exam && now >= deadline(exam)) finishExam(deadline(exam));
+  }
+
   function exportBackup(): Backup {
     return {
       app: "theory-examer",
@@ -280,6 +301,7 @@ export const useProgress = defineStore("progress", () => {
     startExam,
     discardExam,
     finishExam,
+    finishExpiredExam,
     exportBackup,
     importBackup,
     resetAll,

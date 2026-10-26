@@ -17,6 +17,7 @@ async function boot() {
   state.value = "loading";
   try {
     await Promise.all([catalog.load(), progress.load()]);
+    progress.finishExpiredExam();
     state.value = "ready";
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e);

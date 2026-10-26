@@ -112,19 +112,30 @@ describe("themeProgress", () => {
 });
 
 describe("examEstimate", () => {
+  // A pool big enough for one exam: 20 basic + 10 class questions.
+  const pool = (basicPoints: number, classPoints: number) => [
+    ...Array.from({ length: 20 }, (_, i) => q(`b${i}`, "1.1", basicPoints)),
+    ...Array.from({ length: 10 }, (_, i) => q(`c${i}`, "2.1", classPoints)),
+  ];
+
   test("never answered questions use the default recall", () => {
-    const pool = [q("a", "1.1", 4), q("b", "2.1", 2)];
-    const e = examEstimate(pool, () => undefined);
-    expect(e).toBeCloseTo(4 * (1 - UNSEEN_RECALL) * 20 + 2 * (1 - UNSEEN_RECALL) * 10, 6);
+    const e = examEstimate(pool(4, 2), () => undefined);
+    expect(e!).toBeCloseTo(4 * (1 - UNSEEN_RECALL) * 20 + 2 * (1 - UNSEEN_RECALL) * 10, 6);
   });
 
   test("perfect recall gives 0", () => {
-    expect(examEstimate([q("a", "1.1"), q("b", "2.1")], () => 1)).toBe(0);
+    expect(examEstimate(pool(3, 3), () => 1)).toBe(0);
   });
 
   test("uses the recall of each question", () => {
-    const pool = [q("a", "1.1", 5), q("b", "1.1", 5)];
-    expect(examEstimate(pool, (id) => (id === "a" ? 1 : 0))).toBeCloseTo(2.5 * 20, 6);
+    // Half of the basic questions known, class questions all known.
+    const e = examEstimate(pool(5, 5), (id) => (id.startsWith("c") || Number(id.slice(1)) < 10 ? 1 : 0));
+    expect(e!).toBeCloseTo(2.5 * 20, 6);
+  });
+
+  test("null when the pool cannot fill an exam", () => {
+    expect(examEstimate([q("a", "1.1"), q("b", "2.1")], () => 1)).toBeNull();
+    expect(examEstimate(pool(3, 3).slice(0, 20), () => 1)).toBeNull();
   });
 
   test("labels", () => {

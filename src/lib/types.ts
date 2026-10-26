@@ -3,6 +3,8 @@
 export interface Option {
   key: string; // "A" | "B" | "C"
   text: string;
+  /** Picture answers (a few road-sign questions): the option is an image, text is empty. */
+  image?: Media;
 }
 
 export interface Media {

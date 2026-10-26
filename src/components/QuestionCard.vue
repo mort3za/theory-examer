@@ -174,7 +174,10 @@ useKeys((key) => {
           <Minus v-else-if="stateOf(o.key) === 'missed'" class="size-3.5" :stroke-width="3" />
           <template v-else>{{ LETTERS[i] }}</template>
         </span>
-        <span class="flex-1 leading-snug" :lang="de ? 'de' : 'en'">{{ o.text }}</span>
+        <span v-if="o.image" class="flex-1">
+          <img :src="o.image.src" alt="" class="h-20 w-auto rounded-md border bg-white p-1 sm:h-24" loading="lazy" />
+        </span>
+        <span v-else class="flex-1 leading-snug" :lang="de ? 'de' : 'en'">{{ o.text }}</span>
         <span v-if="stateOf(o.key) === 'missed'" class="shrink-0 text-xs font-medium text-success">Missed</span>
       </button>
     </div>

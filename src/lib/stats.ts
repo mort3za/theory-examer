@@ -1,5 +1,5 @@
 import { addDays } from "./date";
-import { expectedErrorPoints, isBasic } from "./exam";
+import { EXAM_RULES, expectedErrorPoints, isBasic } from "./exam";
 import { isMature, State, type StoredCard } from "./srs";
 import type { Question } from "./types";
 
@@ -108,11 +108,12 @@ export function themeProgress(
 /** Chance to answer a never-answered question correctly (rough guess). */
 export const UNSEEN_RECALL = 0.15;
 
-/** Expected error points of one exam drawn from `pool`. */
-export function examEstimate(pool: readonly Question[], recall: (id: string) => number | undefined): number {
+/** Expected error points of one exam drawn from `pool`; null when the pool cannot fill an exam. */
+export function examEstimate(pool: readonly Question[], recall: (id: string) => number | undefined): number | null {
   const basic: { points: number; p: number }[] = [];
   const extra: { points: number; p: number }[] = [];
   for (const q of pool) (isBasic(q) ? basic : extra).push({ points: q.points, p: recall(q.id) ?? UNSEEN_RECALL });
+  if (basic.length < EXAM_RULES.basic || extra.length < EXAM_RULES.additional) return null;
   return expectedErrorPoints(basic, extra);
 }
 

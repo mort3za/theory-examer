@@ -32,9 +32,9 @@ function playLimited() {
   const v = video.value[0];
   if (!v || playing.value || (props.plays ?? 0) >= (props.playLimit ?? 0)) return;
   v.currentTime = 0;
-  v.play();
   playing.value = true;
   emit("play");
+  v.play().catch(() => (playing.value = false));
 }
 </script>
 
@@ -67,8 +67,9 @@ function playLimited() {
         playsinline
         preload="metadata"
         class="mx-auto max-h-[46vh] w-full"
-        @error="onError(m)"
+        @error="onError(m), (playing = false)"
         @ended="playing = false"
+        @pause="playing = false"
       />
       <div
         v-if="playLimit !== undefined && !playing"

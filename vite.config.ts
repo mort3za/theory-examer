@@ -43,7 +43,8 @@ export default defineConfig({
             handler: "CacheFirst",
             options: {
               cacheName: "question-images",
-              expiration: { maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              // GCS sends no CORS headers, so responses are opaque and count large against the quota.
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 365, purgeOnQuotaError: true },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

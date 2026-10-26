@@ -63,8 +63,19 @@ const questions: Question[] = en.map((r) => {
     for (const c of correct) if (!keys.has(c)) problems.push(`${r.question_id}: answer ${c} not in options`);
   }
 
+  // The GitHub copy has one file per question: only a valid fallback when there is one image.
   const media = (urls: string[], local: string[]) =>
-    urls.map((u, i) => ({ src: u, alt: local[i] ? `${REPO}/${local[i]}` : u }));
+    urls.map((u, i) => ({ src: u, alt: urls.length === 1 && local[i] ? `${REPO}/${local[i]}` : u }));
+
+  let images = media(r.image_urls, r.local_image_paths);
+  let options = r.options.map((o) => ({ key: letter(o.letter), text: clean(o.text) }) as Question["options"][number]);
+  // Picture answers: empty option texts and one image per option ("…_a1.png", "…_a2.png", …).
+  if (options.length && options.every((o) => !o.text) && images.length === options.length) {
+    options = options.map((o, i) => ({ ...o, image: images[i] }));
+    images = [];
+  } else if (options.some((o) => !o.text)) {
+    problems.push(`${r.question_id}: option without text`);
+  }
 
   return {
     id: r.question_id,
@@ -72,10 +83,10 @@ const questions: Question[] = en.map((r) => {
     chapter,
     points: Number.parseInt(r.points, 10),
     text: clean(r.question_text),
-    options: r.options.map((o) => ({ key: letter(o.letter), text: clean(o.text) })),
+    options,
     correct,
     comment: clean(r.comment ?? ""),
-    images: media(r.image_urls, r.local_image_paths),
+    images,
     videos: media(r.video_urls, r.local_video_paths),
     url: r.url,
   };

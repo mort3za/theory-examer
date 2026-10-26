@@ -50,6 +50,8 @@ const preview = ref<Record<Grade, number> | null>(null);
 const counts = ref(props.queue.counts());
 const done = ref({ answered: 0, correct: 0, startedAt: Date.now() });
 const helpOpen = ref(false);
+/** One per card shown; keys the QuestionCard so it is rebuilt only for a new card. */
+const turn = ref(0);
 
 const finished = computed(() => !item.value);
 /** Cards left, including the one on screen (like Anki). */
@@ -58,7 +60,12 @@ const shown = computed(() => {
   if (item.value) c[item.value.kind]++;
   return c;
 });
-const practiceProgress = computed(() => (props.total ? Math.min(100, (done.value.answered / props.total) * 100) : 0));
+/** Practice: answered vs. left, incl. learning steps that come back. */
+const practiceTotal = computed(() => {
+  counts.value; // refresh with the queue
+  return done.value.answered + props.queue.size + (item.value && phase.value === "answer" ? 1 : 0);
+});
+const practiceProgress = computed(() => (practiceTotal.value ? (done.value.answered / practiceTotal.value) * 100 : 0));
 
 function check() {
   const q = question.value;
@@ -69,7 +76,8 @@ function check() {
   }
   const now = Date.now();
   ok.value = isCorrect(q, answer.value);
-  scheduling.value = progress.isScheduling(q.id, now);
+  // Learning cards can come up to 20 min early (learn ahead): they still count.
+  scheduling.value = item.value?.kind === "learn" || progress.isScheduling(q.id, now);
   graded.value = false;
   done.value.answered++;
   if (ok.value) done.value.correct++;
@@ -97,8 +105,11 @@ function applyGrade(r: Grade, now = Date.now()) {
 function advance(r: Grade = Rating.Good) {
   if (phase.value !== "result") return;
   if (scheduling.value && ok.value && !graded.value) applyGrade(r);
-  item.value = props.queue.next(Date.now());
+  let next = props.queue.next(Date.now());
+  while (next && progress.data.hidden[next.id]) next = props.queue.next(Date.now());
+  item.value = next;
   counts.value = props.queue.counts();
+  turn.value++;
   answer.value = [];
   phase.value = "answer";
   preview.value = null;
@@ -176,7 +187,7 @@ useKeys((key) => {
         <span :class="cn('text-warning', item?.kind === 'learn' && 'underline underline-offset-4')" title="Learning">{{ shown.learn }}</span>
         <span :class="cn('text-success', item?.kind === 'review' && 'underline underline-offset-4')" title="Due">{{ shown.review }}</span>
       </div>
-      <span v-else-if="total" class="text-xs text-muted-foreground tabular-nums">{{ Math.min(done.answered, total) }} / {{ total }}</span>
+      <span v-else-if="total" class="text-xs text-muted-foreground tabular-nums">{{ done.answered }} / {{ practiceTotal }}</span>
       <Button variant="ghost" size="sm" class="hidden text-muted-foreground sm:inline-flex" @click="helpOpen = true">
         <Kbd>?</Kbd>
       </Button>
@@ -214,7 +225,7 @@ useKeys((key) => {
       <main class="flex-1 space-y-6 pt-2 pb-40">
         <QuestionToolbar :question="question" @hidden="skip" />
         <QuestionCard
-          :key="question.id + ':' + done.answered"
+          :key="turn"
           v-model="answer"
           :question="question"
           :revealed="phase === 'result'"

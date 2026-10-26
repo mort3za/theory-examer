@@ -11,6 +11,7 @@ const rows: [string[], string][] = [
   [["1", "2", "3"], "After a correct answer: Hard, Good, Easy"],
   [["F"], "Flag the question"],
   [["G"], "Show the German text"],
+  [["H"], "Hide the question (not for my class)"],
   [["Esc"], "Exit the session"],
   [["?"], "Show this help"],
 ];

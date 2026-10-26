@@ -18,6 +18,7 @@ import { useCatalog } from "@/stores/catalog";
 import { useProgress } from "@/stores/progress";
 
 const props = withDefaults(defineProps<{ question: Question; actions?: boolean }>(), { actions: true });
+const emit = defineEmits<{ hidden: [] }>();
 
 const catalog = useCatalog();
 const progress = useProgress();
@@ -29,6 +30,7 @@ const hidden = computed(() => !!progress.data.hidden[props.question.id]);
 
 function toggleHidden() {
   progress.toggleHidden(props.question.id);
+  if (hidden.value) emit("hidden");
   toast(hidden.value ? "Question hidden. It will not come up again." : "Question shown again.", {
     action: { label: "Undo", onClick: () => progress.toggleHidden(props.question.id) },
   });
@@ -91,7 +93,7 @@ function toggleHidden() {
           <DropdownMenuSeparator />
           <DropdownMenuItem @select="toggleHidden">
             <template v-if="hidden"><Eye /> Show this question again</template>
-            <template v-else><EyeOff /> Hide (not for my class)</template>
+            <template v-else><EyeOff /> Hide (not for my class) <span class="ml-auto text-xs opacity-60">H</span></template>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

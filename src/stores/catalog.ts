@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, shallowRef } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import type { Catalog, Chapter, GermanText, Question, Theme } from "@/lib/types";
 
 const dataUrl = (file: string) => `${import.meta.env.BASE_URL}data/${file}`;
@@ -8,6 +8,7 @@ export const useCatalog = defineStore("catalog", () => {
   const questions = shallowRef<Question[]>([]);
   const themes = shallowRef<Theme[]>([]);
   const chapters = shallowRef<Chapter[]>([]);
+  const generatedAt = ref("");
   const german = shallowRef<Record<string, GermanText> | null>(null);
   let germanLoading: Promise<void> | null = null;
 
@@ -22,6 +23,7 @@ export const useCatalog = defineStore("catalog", () => {
     questions.value = data.questions;
     themes.value = data.themes;
     chapters.value = data.chapters;
+    generatedAt.value = data.generatedAt;
   }
 
   /** German texts are loaded only when first needed (~1.2 MB). */
@@ -40,5 +42,5 @@ export const useCatalog = defineStore("catalog", () => {
 
   const get = (id: string) => byId.value.get(id);
 
-  return { questions, themes, chapters, german, byId, themeById, chapterById, load, loadGerman, get };
+  return { questions, generatedAt, themes, chapters, german, byId, themeById, chapterById, load, loadGerman, get };
 });

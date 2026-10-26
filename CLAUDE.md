@@ -38,7 +38,7 @@ Personal web app to learn the German driving theory exam (class B, English quest
 
 ## UI rules (keep it minimal and professional)
 
-- Neutral zinc palette. Primary = foreground color (near black / near white). Semantic colors only from tokens: `success`, `destructive`, `warning` (e.g. `text-success`, `bg-success/10`). No gradients, no decorative colors, no emoji.
+- Neutral zinc palette. Primary = foreground color (near black / near white). Semantic colors only from tokens: `success`, `destructive`, `warning`, `info` (e.g. `text-success`, `bg-success/10`). No gradients, no decorative colors, no emoji.
 - Use shadcn-vue components from `@/components/ui/*`. Borders `border rounded-lg`, no shadows except floating bars/menus.
 - Page header: `<h1 class="text-2xl font-semibold tracking-tight">` + one `text-sm text-muted-foreground` line. Section label: `text-sm font-medium text-muted-foreground`.
 - Numbers: `tabular-nums`. Icons: `size-4`/`size-5`, `text-muted-foreground` when decorative.

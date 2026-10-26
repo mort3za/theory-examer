@@ -24,7 +24,8 @@ const isActive = (to: string) => (to === "/" ? route.path === "/" : route.path.s
 </script>
 
 <template>
-  <RouterView v-if="focus" />
+  <!-- Keyed by URL: a new session URL must start a new session. -->
+  <RouterView v-if="focus" :key="route.fullPath" />
   <div v-else class="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
     <header class="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
       <div class="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4">

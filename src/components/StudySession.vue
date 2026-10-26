@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleCheck, CircleX, PartyPopper, X } from "@lucide/vue";
+import { CircleCheck, CircleX, Inbox, PartyPopper, X } from "@lucide/vue";
 import { computed, ref, shallowRef } from "vue";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
@@ -52,6 +52,12 @@ const done = ref({ answered: 0, correct: 0, startedAt: Date.now() });
 const helpOpen = ref(false);
 
 const finished = computed(() => !item.value);
+/** Cards left, including the one on screen (like Anki). */
+const shown = computed(() => {
+  const c = { ...counts.value };
+  if (item.value) c[item.value.kind]++;
+  return c;
+});
 const practiceProgress = computed(() => (props.total ? Math.min(100, (done.value.answered / props.total) * 100) : 0));
 
 function check() {
@@ -116,6 +122,24 @@ const nextWaiting = computed(() => {
   return due ? formatInterval(due - Date.now()) : null;
 });
 
+/** "Not for my class": hide the question for good and move on. */
+function hideCurrent() {
+  const id = item.value?.id;
+  if (!id || progress.data.hidden[id]) return;
+  progress.toggleHidden(id);
+  toast("Question hidden. It will not come up again.", {
+    action: { label: "Undo", onClick: () => progress.toggleHidden(id) },
+  });
+  skip();
+}
+
+/** Next card without grading this one. */
+function skip() {
+  graded.value = true;
+  phase.value = "result";
+  advance();
+}
+
 function exit() {
   router.push(props.exitTo ?? "/");
 }
@@ -126,6 +150,7 @@ useKeys((key) => {
   const id = item.value!.id;
   if (key === "f") return void progress.toggleFlag(id), true;
   if (key === "g") return void german.toggle(), true;
+  if (key === "h") return void hideCurrent(), true;
   if (key === "escape") return void exit(), true;
   if (phase.value === "answer") {
     if (key === "enter") return void check(), true;
@@ -147,9 +172,9 @@ useKeys((key) => {
         <Progress v-if="mode === 'practice' && total" :model-value="practiceProgress" class="h-1.5" />
       </div>
       <div v-if="mode === 'review'" class="flex items-center gap-3 text-xs font-medium tabular-nums" aria-label="Cards left">
-        <span class="text-sky-600 dark:text-sky-400" title="New">{{ counts.new }}</span>
-        <span class="text-warning" title="Learning">{{ counts.learn }}</span>
-        <span class="text-success" title="Due">{{ counts.review }}</span>
+        <span :class="cn('text-info', item?.kind === 'new' && 'underline underline-offset-4')" title="New">{{ shown.new }}</span>
+        <span :class="cn('text-warning', item?.kind === 'learn' && 'underline underline-offset-4')" title="Learning">{{ shown.learn }}</span>
+        <span :class="cn('text-success', item?.kind === 'review' && 'underline underline-offset-4')" title="Due">{{ shown.review }}</span>
       </div>
       <span v-else-if="total" class="text-xs text-muted-foreground tabular-nums">{{ Math.min(done.answered, total) }} / {{ total }}</span>
       <Button variant="ghost" size="sm" class="hidden text-muted-foreground sm:inline-flex" @click="helpOpen = true">
@@ -160,7 +185,8 @@ useKeys((key) => {
     <!-- Finished -->
     <section v-if="finished" class="flex flex-1 flex-col items-center justify-center gap-6 py-16 text-center">
       <div class="flex size-14 items-center justify-center rounded-full bg-muted">
-        <PartyPopper class="size-6" />
+        <PartyPopper v-if="done.answered" class="size-6" />
+        <Inbox v-else class="size-6 text-muted-foreground" />
       </div>
       <div class="space-y-1.5">
         <h1 class="text-2xl font-semibold tracking-tight">
@@ -186,7 +212,7 @@ useKeys((key) => {
     <!-- Question -->
     <template v-else-if="question">
       <main class="flex-1 space-y-6 pt-2 pb-40">
-        <QuestionToolbar :question="question" />
+        <QuestionToolbar :question="question" @hidden="skip" />
         <QuestionCard
           :key="question.id + ':' + done.answered"
           v-model="answer"

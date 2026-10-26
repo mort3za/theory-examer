@@ -2,8 +2,10 @@ import { watchDebounced } from "@vueuse/core";
 import { get as idbGet, set as idbSet } from "idb-keyval";
 import { defineStore } from "pinia";
 import { computed, ref, toRaw } from "vue";
+import { isAnswered } from "@/lib/answer";
 import { dayKey } from "@/lib/date";
-import type { ExamScore } from "@/lib/exam";
+import { scoreExam, type ExamScore } from "@/lib/exam";
+import { deadline } from "@/lib/examRun";
 import { isDue, newCard, Rating, Scheduler, State, type Grade, type StoredCard } from "@/lib/srs";
 import type { Answer } from "@/lib/types";
 import { useCatalog } from "./catalog";
@@ -174,7 +176,11 @@ export const useProgress = defineStore("progress", () => {
   /** Probability to answer correctly now (FSRS recall, or past accuracy for exam-only answers). */
   function recall(id: string, now = Date.now()): number | undefined {
     const c = data.value.cards[id];
-    if (c && c.state !== State.New) return scheduler.value.retrievability(c, now);
+    if (c && c.state !== State.New) {
+      const r = scheduler.value.retrievability(c, now);
+      // Still in short-term (re)learning: right after a step FSRS says ~100%, but the card is not known yet.
+      return c.state === State.Review ? r : Math.min(r, 0.5);
+    }
     const st = data.value.stats[id];
     return st?.seen ? st.ok / st.seen : undefined;
   }
@@ -193,6 +199,39 @@ export const useProgress = defineStore("progress", () => {
     const t = text.trim();
     if (t) data.value.notes[id] = text;
     else delete data.value.notes[id];
+  }
+
+  /** Start a new exam attempt. It stays in `currentExam` until finished or discarded. */
+  function startExam(questions: string[], now = Date.now()): ExamAttempt {
+    const exam: ExamAttempt = {
+      id: crypto.randomUUID(),
+      startedAt: now,
+      minutes: settings.s.examMinutes,
+      questions,
+      answers: {},
+      marked: [],
+      plays: {},
+    };
+    data.value.currentExam = exam;
+    return exam;
+  }
+
+  function discardExam() {
+    data.value.currentExam = null;
+  }
+
+  /** Score the running exam, update stats (no FSRS) and move it to the history. Returns its id. */
+  function finishExam(now = Date.now()): string | undefined {
+    const exam = data.value.currentExam;
+    if (!exam) return;
+    const questions = exam.questions.flatMap((id) => catalog.get(id) ?? []);
+    const score = scoreExam(questions, exam.answers);
+    const wrong = new Set(score.wrong);
+    // Unanswered questions count as wrong in the score, but they are not real attempts.
+    for (const q of questions) if (isAnswered(q, exam.answers[q.id] ?? [])) record(q.id, !wrong.has(q.id), "exam", now);
+    data.value.exams.push({ ...clone(exam), finishedAt: Math.min(now, deadline(exam)), score });
+    data.value.currentExam = null;
+    return exam.id;
   }
 
   function exportBackup(): Backup {
@@ -238,6 +277,9 @@ export const useProgress = defineStore("progress", () => {
     toggleFlag,
     toggleHidden,
     setNote,
+    startExam,
+    discardExam,
+    finishExam,
     exportBackup,
     importBackup,
     resetAll,

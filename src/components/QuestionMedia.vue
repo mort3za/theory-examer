@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Play } from "@lucide/vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Media } from "@/lib/types";
 
@@ -12,6 +12,10 @@ const props = defineProps<{
   plays?: number;
 }>();
 const emit = defineEmits<{ play: [] }>();
+
+// Video questions come with one still image (the first frame): use it as the poster, not as a second picture.
+const stills = computed(() => (props.videos.length ? [] : props.images));
+const poster = computed(() => (props.videos.length && props.images[0] ? src(props.images[0]) : undefined));
 
 const failed = ref<Record<string, boolean>>({});
 const zoom = ref<string | null>(null);
@@ -37,7 +41,7 @@ function playLimited() {
 <template>
   <div v-if="images.length || videos.length" class="space-y-3">
     <button
-      v-for="m in images"
+      v-for="m in stills"
       :key="m.src"
       type="button"
       class="block w-full overflow-hidden rounded-lg border bg-muted/40"
@@ -58,6 +62,7 @@ function playLimited() {
       <video
         ref="video"
         :src="src(m)"
+        :poster="poster"
         :controls="playLimit === undefined"
         playsinline
         preload="metadata"
